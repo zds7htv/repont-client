@@ -1,54 +1,112 @@
-# React + TypeScript + Vite
+# REPONT – Termékvisszavételi statisztikai rendszer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ez a projekt egy **webes statisztikai felület**, amely segít a termék-visszavételek elemzésében és vizualizálásában.  
+A rendszer két részből áll:
 
-Currently, two official plugins are available:
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Laravel REST API
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## Funkciók
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Szűrés dátum intervallum és gép szerint
+- Termékek rangsorolása (mennyiség szerint)
+- Oszlopdiagram megjelenítés
+- Események listája (modal ablakban)
+- Alapszintű bejelentkezés (admin/admin)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+---
+
+## Követelmények
+
+- Node.js (v18+)
+- PHP (8.1+) és Composer
+- MySQL / SQLite adatbázis
+- Git
+
+---
+
+## Telepítés
+
+### 1. Klónozás
+
+```bash
+git clone https://github.com/zds7htv/repont-client.git
+cd repont-client
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Frontend (React)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+cd repont-client
+npm install
+npm run dev
 ```
+
+### 3. Backend (Laravel)
+
+```bash
+cd repont-api
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+---
+
+## Bejelentkezés
+
+A rendszer jelenleg egy **egyszerű bejelentkezést** tartalmaz:
+
+- Felhasználónév: `admin`
+- Jelszó: `admin`
+
+> A bejelentkezés után a felhasználói állapot sessionStorage-ben kerül mentésre.
+
+---
+
+## Használat
+
+1. Jelentkezz be a kezdőlapon.
+2. Válassz dátumot és gépet.
+3. Az oszlopdiagramon kattints egy termékre az események listázásához.
+
+---
+
+## Mappa struktúra
+
+```
+repont-client/
+├── src/
+│   ├── components/
+│   ├── lib/
+│   ├── App.tsx
+│   ├── Login.tsx
+│   └── ...
+├── repont-api/
+│   ├── app/
+│   ├── routes/
+│   ├── database/
+│   └── ...
+├── public/
+├── tailwind.config.js
+├── postcss.config.cjs
+└── README.md
+```
+
+---
+
+## Készítette
+
+**Zsiga Dániel**  
+GitHub: [zds7htv](https://github.com/zds7htv)  
+Email: zsigadani55@gmail.com
+
+---
+
+## Licenc
+
+MIT – Szabadon használható, módosítható, terjeszthető.
