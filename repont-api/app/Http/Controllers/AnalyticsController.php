@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class AnalyticsController extends Controller
 {
@@ -12,80 +14,91 @@ class AnalyticsController extends Controller
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
         $to = $request->query('to', '2025-12-31 23:59:59');
-        $machineId = $request->query('machine_id');
+        $machineId = $request->query('machine_id', 'all');
 
-        $query = DB::table('recycling')
-            ->join('products', 'recycling.product', '=', 'products.id')
-            ->whereBetween('recycling.event_date', [$from, $to])
-            ->where('recycling.event_type', 'success')
-            ->select('products.id as product_id', 'products.product_name', DB::raw('COUNT(*) as count'));
+        $cacheKey = "leaderboard:$from:$to:$machineId";
 
-        if ($machineId && $machineId !== 'all') {
-            $query->where('recycling.machine_id', $machineId)
-                  ->join('machines', 'recycling.machine_id', '=', 'machines.id')
-                  ->addSelect('machines.name as machine_name')
-                  ->groupBy('products.id', 'products.product_name', 'machines.name');
-        } else {
-            $query->groupBy('products.id', 'products.product_name');
-        }
+        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId) {
+            $query = DB::table('recycling')
+                ->join('products', 'recycling.product', '=', 'products.id')
+                ->whereBetween('recycling.event_date', [$from, $to])
+                ->where('recycling.event_type', 'success')
+                ->select('products.id as product_id', 'products.product_name', DB::raw('COUNT(*) as count'));
 
-        return response()->json($query->orderByDesc('count')->get());
+            if ($machineId !== 'all') {
+                $query->where('recycling.machine_id', $machineId)
+                      ->join('machines', 'recycling.machine_id', '=', 'machines.id')
+                      ->addSelect('machines.name as machine_name')
+                      ->groupBy('products.id', 'products.product_name', 'machines.name');
+            } else {
+                $query->groupBy('products.id', 'products.product_name');
+            }
+
+            return $query->orderByDesc('count')->get();
+        });
     }
 
-    // 2. Modalhoz: adott termék eseményei adott gépen és időszakban
+    // 2. Modalhoz: adott termék eseményei adott gépen és időszakban (limit dinamikusan kezelt)
     public function events(Request $request)
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
         $to = $request->query('to', '2025-12-31 23:59:59');
         $machineId = $request->query('machine_id');
         $productId = $request->query('product_id');
+        $limit = (int) $request->query('limit', 100);
 
-        $query = DB::table('recycling')
-            ->join('products', 'recycling.product', '=', 'products.id')
-            ->join('machines', 'recycling.machine_id', '=', 'machines.id')
-            ->whereBetween('recycling.event_date', [$from, $to])
-            ->where('recycling.product', $productId);
+        $cacheKey = "events:$from:$to:$machineId:$productId:$limit";
 
-        if ($machineId && $machineId !== 'all') {
-            $query->where('recycling.machine_id', $machineId);
-        }
+        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId, $productId, $limit) {
+            $query = DB::table('recycling')
+                ->join('products', 'recycling.product', '=', 'products.id')
+                ->join('machines', 'recycling.machine_id', '=', 'machines.id')
+                ->whereBetween('recycling.event_date', [$from, $to])
+                ->where('recycling.product', $productId);
 
-        $results = $query
-            ->select(
+            if ($machineId && $machineId !== 'all') {
+                $query->where('recycling.machine_id', $machineId);
+            }
+
+            $query->select(
                 'products.product_name',
                 'products.type_number',
                 'machines.name as machine',
                 'recycling.event_type',
                 'recycling.event_date'
-            )
-            ->orderBy('recycling.event_date', 'desc')
-            ->limit(1000)
-            ->get();
+            )->orderBy('recycling.event_date', 'desc');
 
-        return response()->json($results);
+            if ($limit > 0) {
+                $query->limit($limit);
+            }
+
+            return $query->get();
+        });
     }
 
-    // 3. Gépek listázása legördülőhöz
+    // 3. Gépek listázása (cache-elve)
     public function machines()
     {
-        $machines = DB::table('machines')
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
-
-        return response()->json($machines);
+        return Cache::remember('machines:list', 600, function () {
+            return DB::table('machines')
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get();
+        });
     }
 
-    // 4. Elérhető dátumtartomány (minimum és maximum)
+    // 4. Elérhető dátumtartomány (cache-elve)
     public function daterange()
     {
-        $range = DB::table('recycling')
-            ->selectRaw('MIN(event_date) as start, MAX(event_date) as end')
-            ->first();
+        return Cache::remember('daterange:minmax', 600, function () {
+            $range = DB::table('recycling')
+                ->selectRaw('MIN(event_date) as start, MAX(event_date) as end')
+                ->first();
 
-        return response()->json([
-            'start' => \Carbon\Carbon::parse($range->start)->toISOString(),
-            'end' => \Carbon\Carbon::parse($range->end)->toISOString(),
-        ]);
+            return [
+                'start' => Carbon::parse($range->start)->toISOString(),
+                'end' => Carbon::parse($range->end)->toISOString(),
+            ];
+        });
     }
 }
