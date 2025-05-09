@@ -1,4 +1,4 @@
-# REPONT – Termékvisszavételi statisztikai rendszer
+# REPONT – Flakonvisszavételi statisztikai rendszer
 
 Ez a projekt egy **webes statisztikai felület**, amely segít a termék-visszavételek elemzésében és vizualizálásában.  
 A rendszer két részből áll:
