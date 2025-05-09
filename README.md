@@ -1,6 +1,6 @@
 # REPONT – Flakonvisszavételi statisztikai rendszer
 
-Ez a projekt egy **webes statisztikai felület**, amely segít a termék-visszavételek elemzésében és vizualizálásában.  
+Ez a projekt egy **webes statisztikai felület**, amely segít a flakon-visszavételek elemzésében és vizualizálásában.  
 A rendszer két részből áll:
 
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS
@@ -11,7 +11,7 @@ A rendszer két részből áll:
 ## Funkciók
 
 - Szűrés dátum intervallum és gép szerint
-- Termékek rangsorolása (mennyiség szerint)
+- Flakonok rangsorolása (mennyiség szerint)
 - Oszlopdiagram megjelenítés
 - Események listája (modal ablakban)
 - Alapszintű bejelentkezés (admin/admin)
@@ -72,7 +72,7 @@ A rendszer jelenleg egy **egyszerű bejelentkezést** tartalmaz:
 
 1. Jelentkezz be a kezdőlapon.
 2. Válassz dátumot és gépet.
-3. Az oszlopdiagramon kattints egy termékre az események listázásához.
+3. Az oszlopdiagramon kattints egy oszlopra az események listázásához.
 
 ---
 
