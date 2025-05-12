@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use PragmaRX\Google2FA\Google2FA;
 
 class AnalyticsController extends Controller
 {
@@ -100,5 +101,64 @@ class AnalyticsController extends Controller
                 'end' => Carbon::parse($range->end)->toISOString(),
             ];
         });
+    }
+
+    // 5. Bejelentkezés jelszóval (TOTP előkészítéssel)
+    public function login(Request $request)
+    {
+        $name = $request->input('name');
+        $password = $request->input('password');
+
+        if (!$name || !$password) {
+            return response()->json(['error' => 'Név és jelszó kötelező!'], 400);
+        }
+
+        $user = DB::table('users')->where('name', $name)->first();
+
+        if (!$user || !password_verify($password, $user->password)) {
+            return response()->json(['error' => 'Hibás felhasználónév vagy jelszó!'], 401);
+        }
+
+        if (!$user->totp_secret) {
+            return response()->json(['error' => 'Hiányzik a TOTP kulcs a felhasználónál.'], 403);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Jelszó helyes, TOTP kód szükséges.',
+            'user' => [
+                'name' => $user->name,
+                'requires_totp' => true
+            ]
+        ]);
+    }
+
+    // 6. TOTP (Google Authenticator) ellenőrzése
+    public function verifyTotp(Request $request)
+    {
+        $name = $request->input('name');
+        $code = $request->input('code');
+
+        if (!$name || !$code) {
+            return response()->json(['error' => 'Név és kód kötelező!'], 400);
+        }
+
+        $user = DB::table('users')->where('name', $name)->first();
+
+        if (!$user || !$user->totp_secret) {
+            return response()->json(['error' => 'Felhasználó vagy TOTP kulcs nem található.'], 404);
+        }
+
+        $google2fa = new Google2FA();
+        $isValid = $google2fa->verifyKey($user->totp_secret, $code);
+
+        if (!$isValid) {
+            return response()->json(['error' => 'Érvénytelen TOTP kód!'], 401);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'TOTP ellenőrzés sikeres.'
+        ]);
     }
 }

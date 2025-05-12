@@ -1,6 +1,7 @@
-# REPONT – Termékvisszavételi statisztikai rendszer
 
-Ez a projekt egy **webes statisztikai felület**, amely segít a termék-visszavételek elemzésében és vizualizálásában.  
+# REPONT – Flakonvisszavételi statisztikai rendszer
+
+Ez a projekt egy **webes statisztikai felület**, amely segít a flakon-visszavételek elemzésében és vizualizálásában.  
 A rendszer két részből áll:
 
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS
@@ -11,10 +12,10 @@ A rendszer két részből áll:
 ## Funkciók
 
 - Szűrés dátum intervallum és gép szerint
-- Termékek rangsorolása (mennyiség szerint)
+- Flakonok rangsorolása (mennyiség szerint)
 - Oszlopdiagram megjelenítés
 - Események listája (modal ablakban)
-- Alapszintű bejelentkezés (admin/admin)
+- **Kétlépcsős bejelentkezés (felhasználónév + Google Authenticator OTP)**
 
 ---
 
@@ -59,20 +60,71 @@ php artisan serve
 
 ## Bejelentkezés
 
-A rendszer jelenleg egy **egyszerű bejelentkezést** tartalmaz:
+A rendszer **kétlépcsős azonosítást** használ:
 
-- Felhasználónév: `admin`
-- Jelszó: `admin`
+1. Írd be a felhasználónevet és jelszót:
+   - Felhasználónév: `admin`  
+   - Jelszó: `admin`
 
-> A bejelentkezés után a felhasználói állapot sessionStorage-ben kerül mentésre.
+2. Ezután meg kell adnod a **Google Authenticator** alkalmazás által generált 6 jegyű kódot.
+
+**Teszteléshez használható Google Auth kulcs:**
+
+```
+RDPE4QK6ZYRCZORY
+```
+
+> Regisztráld be Google Authenticator alkalmazásba manuálisan, vagy generálj hozzá QR kódot.
+
+---
+
+## API végpontok
+
+A backend a következő API-kat biztosítja:
+
+### GET `/api/leaderboard`
+
+Visszaadja az összesített statisztikát dátum és gép szerint.
+
+### GET `/api/events`
+
+Termékhez tartozó események listázása.
+
+### GET `/api/machines`
+
+Visszaadja az elérhető gépeket.
+
+### GET `/api/daterange`
+
+Visszaadja a legkorábbi és legkésőbbi esemény dátumot.
+
+### POST `/api/login`
+
+Bejelentkezés felhasználónév és jelszó alapján.  
+Ha az első lépés sikeres, válaszban szerepel `requires_totp: true`.
+
+**Body példa:**
+```json
+{ "name": "admin", "password": "admin" }
+```
+
+### POST `/api/verify-totp`
+
+Google Auth OTP kód ellenőrzése.
+
+**Body példa:**
+```json
+{ "name": "admin", "code": "123456" }
+```
 
 ---
 
 ## Használat
 
 1. Jelentkezz be a kezdőlapon.
-2. Válassz dátumot és gépet.
-3. Az oszlopdiagramon kattints egy termékre az események listázásához.
+2. Add meg a Google Authenticator által generált kódot.
+3. Válassz dátumot és gépet.
+4. Az oszlopdiagramon kattints egy flakonra az események listázásához.
 
 ---
 
@@ -110,3 +162,4 @@ Email: zsigadani55@gmail.com
 ## Licenc
 
 MIT – Szabadon használható, módosítható, terjeszthető.
+
