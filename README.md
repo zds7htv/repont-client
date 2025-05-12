@@ -162,4 +162,3 @@ Email: zsigadani55@gmail.com
 ## Licenc
 
 MIT – Szabadon használható, módosítható, terjeszthető.
-
