@@ -17,4 +17,9 @@ export default defineConfig({
     open: false,
   },
   clearScreen: false,
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: false,
+  },
 })
