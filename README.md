@@ -1,30 +1,29 @@
-
 # REPONT – Flakonvisszavételi statisztikai rendszer
 
 Ez a projekt egy **webes statisztikai felület**, amely segít a flakon-visszavételek elemzésében és vizualizálásában.  
 A rendszer két részből áll:
 
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS  
 - **Backend**: Laravel REST API
 
 ---
 
 ## Funkciók
 
-- Szűrés dátum intervallum és gép szerint
-- Flakonok rangsorolása (mennyiség szerint)
-- Oszlopdiagram megjelenítés
-- Események listája (modal ablakban)
-- **Kétlépcsős bejelentkezés (felhasználónév + Google Authenticator OTP)**
+- Szűrés dátum intervallum és gép szerint  
+- Flakonok rangsorolása (mennyiség szerint)  
+- Oszlopdiagram megjelenítés  
+- Események listája (modal ablakban)  
+- **Kétlépcsős bejelentkezés (felhasználónév + Google Authenticator OTP)**  
 
 ---
 
 ## Követelmények
 
-- Node.js (v18+)
-- PHP (8.1+) és Composer
-- MySQL / SQLite adatbázis
-- Git
+- Node.js (v18+)  
+- PHP (8.1+) és Composer  
+- MySQL / SQLite adatbázis  
+- Git  
 
 ---
 
@@ -62,11 +61,10 @@ php artisan serve
 
 A rendszer **kétlépcsős azonosítást** használ:
 
-1. Írd be a felhasználónevet és jelszót:
+1. Írd be a felhasználónevet és jelszót:  
    - Felhasználónév: `admin`  
-   - Jelszó: `admin`
-
-2. Ezután meg kell adnod a **Google Authenticator** alkalmazás által generált 6 jegyű kódot.
+   - Jelszó: `admin`  
+2. Ezután meg kell adnod a **Google Authenticator** által generált 6 jegyű kódot.
 
 **Teszteléshez használható Google Auth kulcs:**
 
@@ -80,39 +78,29 @@ RDPE4QK6ZYRCZORY
 
 ## API végpontok
 
-A backend a következő API-kat biztosítja:
-
-### GET `/api/leaderboard`
-
+### GET `/api/leaderboard`  
 Visszaadja az összesített statisztikát dátum és gép szerint.
 
-### GET `/api/events`
-
+### GET `/api/events`  
 Termékhez tartozó események listázása.
 
-### GET `/api/machines`
-
+### GET `/api/machines`  
 Visszaadja az elérhető gépeket.
 
-### GET `/api/daterange`
-
+### GET `/api/daterange`  
 Visszaadja a legkorábbi és legkésőbbi esemény dátumot.
 
-### POST `/api/login`
-
+### POST `/api/login`  
 Bejelentkezés felhasználónév és jelszó alapján.  
 Ha az első lépés sikeres, válaszban szerepel `requires_totp: true`.
 
-**Body példa:**
 ```json
 { "name": "admin", "password": "admin" }
 ```
 
-### POST `/api/verify-totp`
-
+### POST `/api/verify-totp`  
 Google Auth OTP kód ellenőrzése.
 
-**Body példa:**
 ```json
 { "name": "admin", "code": "123456" }
 ```
@@ -121,9 +109,9 @@ Google Auth OTP kód ellenőrzése.
 
 ## Használat
 
-1. Jelentkezz be a kezdőlapon.
-2. Add meg a Google Authenticator által generált kódot.
-3. Válassz dátumot és gépet.
+1. Jelentkezz be a kezdőlapon.  
+2. Add meg a Google Authenticator által generált kódot.  
+3. Válassz dátumot és gépet.  
 4. Az oszlopdiagramon kattints egy flakonra az események listázásához.
 
 ---
@@ -148,32 +136,26 @@ repont-client/
 ├── postcss.config.cjs
 └── README.md
 ```
+
 ---
 
-Valós idejű log feldolgozó rendszer (watcher)
+## Valós idejű log feldolgozó rendszer (watcher)
 
-A projekt tartalmaz egy valós idejű fájlfigyelő modult is (repont-logupload mappában), amely automatikusan felismeri és feldolgozza a feltöltött logfájlokat, majd a megfelelő adatbázis-táblába menti azokat.
+A projekt tartalmaz egy **valós idejű fájlfigyelő modult** is (`repont-logupload` mappában), amely automatikusan felismeri és feldolgozza a feltöltött logfájlokat, majd a megfelelő adatbázis-táblába menti azokat.
 
-Főbb jellemzők:
+### Főbb jellemzők
 
-Figyeli a temp mappát, és az ott megjelenő .log kiterjesztésű JSON fájlokat dolgozza fel.
+- Figyeli a `temp` mappát, és az ott megjelenő `.log` kiterjesztésű JSON fájlokat dolgozza fel.
+- Automatikus struktúrafelismerés alapján eldönti, hogy a `products` vagy `recycling` táblába tartozik az adat.
+- Érvényes szerkezet esetén:
+  - Betölti az adatokat a MariaDB `repont` adatbázisba.
+  - Átmozgatja a fájlt a `products` vagy `recycling` mappába.
+  - Új fájlnév kerül generálásra: `0001_20250514T213012.log` (sorszám + dátum/idő).
+- Hibás JSON vagy ismeretlen struktúra esetén a fájl nem kerül feldolgozásra.
 
-Automatikus struktúrafelismerés alapján eldönti, hogy a products vagy a recycling táblába tartozik az adat.
+### Könyvtárstruktúra
 
-Érvényes szerkezet esetén:
-
-Betölti az adatokat a MariaDB repont adatbázisba.
-
-Átmozgatja a fájlt a products vagy recycling mappába.
-
-Új fájlnév kerül generálásra: 0001_20250514T213012.log (sorszám + dátum/idő).
-
-
-Hibás JSON vagy ismeretlen struktúra esetén nem dolgozza fel, csak naplózza a hibát.
-
-
-Könyvtárstruktúra:
-
+```
 repont-logupload/
 ├── watcher.py             # A fájlfigyelő és feldolgozó logika
 ├── config.py              # Az adatbázis csatlakozási adatai (nincs verziókövetve)
@@ -183,19 +165,25 @@ repont-logupload/
 │   └── recycling/         # Ide kerülnek az érvényes visszavételi események
 ├── samples/               # Minta fájlok termék és esemény formátumokhoz
 ├── .gitignore             # Kizárja a `venv/`, `config.py` és más érzékeny fájlokat
+```
 
-Watcher elindítása:
+### Watcher elindítása
 
+```bash
 cd repont-logupload
 source venv/bin/activate     # Virtuális környezet aktiválása
 python watcher.py            # Watcher futtatása
+```
 
-JSON mintaformátumok:
+---
 
-A watcher csak akkor dolgozza fel a fájlokat, ha azok helyes JSON formátumban és a megfelelő kulcsokkal kerülnek be a temp mappába. Az alábbiak a támogatott szerkezetek:
+## JSON mintaformátumok
 
-1. Termékadatok (products tábla)
+A watcher csak akkor dolgozza fel a fájlokat, ha azok helyes JSON formátumban és a megfelelő kulcsokkal kerülnek be a `temp` mappába.
 
+### 1. Termékadatok (`products` tábla)
+
+```json
 [
   {
     "type_number": "X654",
@@ -206,17 +194,16 @@ A watcher csak akkor dolgozza fel a fájlokat, ha azok helyes JSON formátumban 
     "product_name": "Hell Classic"
   }
 ]
+```
 
-Kulcsok pontosan: type_number, product_name
-
-A fájl a products mappába kerül, és az adatok a products táblába íródnak.
-
-
+- **Kulcsok pontosan:** `type_number`, `product_name`  
+- A fájl a `products` mappába kerül, és az adatok a `products` táblába íródnak.
 
 ---
 
-2. Visszavételi események (recycling tábla)
+### 2. Visszavételi események (`recycling` tábla)
 
+```json
 [
   {
     "machine_id": 1,
@@ -233,38 +220,20 @@ A fájl a products mappába kerül, és az adatok a products táblába íródnak
     "event_date": "2025-05-14 21:27:15",
     "created_at": "2025-05-14 21:27:20",
     "updated_at": "2025-05-14 21:27:20"
-  },
-  {
-    "machine_id": 1,
-    "product": 12,
-    "event_type": "error",
-    "event_date": "2025-05-14 21:28:33",
-    "created_at": "2025-05-14 21:28:40",
-    "updated_at": "2025-05-14 21:28:40"
-  },
-  {
-    "machine_id": 2,
-    "product": 12,
-    "event_type": "success",
-    "event_date": "2025-05-14 21:29:47",
-    "created_at": "2025-05-14 21:29:50",
-    "updated_at": "2025-05-14 21:29:50"
   }
 ]
+```
 
+- **Kulcsok pontosan:** `machine_id`, `product`, `event_type`, `event_date`, `created_at`, `updated_at`  
+- A fájl a `recycling` mappába kerül, és az adatok a `recycling` táblába íródnak.
 
-Kulcsok pontosan: machine_id, product, event_type, event_date, created_at, updated_at
+---
 
-A fájl a recycling mappába kerül, és az adatok a recycling táblába íródnak.
+### Fontos ellenőrzési szabályok
 
-
-Fontos ellenőrzési szabályok:
-
-A JSON fájl gyökerében tömb ([]) kell legyen.
-
-Minden rekordban minden kulcs szerepeljen, pontos névvel és típussal.
-
-Extra kulcs vagy hiányzó kulcs esetén a fájl nem kerül feldolgozásra.
+- A JSON fájl **gyökerében tömb** (`[]`) kell legyen.  
+- Minden rekordban **minden kulcs szerepeljen**, pontos névvel és típussal.  
+- Extra kulcs vagy hiányzó kulcs esetén a fájl **nem kerül feldolgozásra**.
 
 ---
 
