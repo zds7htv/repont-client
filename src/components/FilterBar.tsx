@@ -35,8 +35,8 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         setFrom(formattedFrom)
         setTo(formattedTo)
         onFilterChange({
-          from: dRes.data.start,
-          to: dRes.data.end,
+          from: formattedFrom,
+          to: formattedTo,
           machineId: "all",
         })
       } catch (err) {
@@ -49,8 +49,8 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   useEffect(() => {
     if (from && to) {
       onFilterChange({
-        from: new Date(from).toISOString(),
-        to: new Date(to).toISOString(),
+        from,
+        to,
         machineId: machineId === "all" ? null : machineId,
       })
     }
