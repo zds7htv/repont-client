@@ -6,14 +6,17 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Cell
 } from "recharts"
 
 interface ChartProps {
   data: {
     product_name: string
-    count: number
     product_id: number
+    success: number
+    warning: number
+    error: number
   }[]
   onBarClick: (productId: number) => void
 }
@@ -26,34 +29,44 @@ export const Chart: React.FC<ChartProps> = ({ data, onBarClick }) => {
       </p>
     )
 
-  const CustomLabel = ({ x, y, width, height, index }: any) => {
-    const label = data[index]?.product_name
-    if (!label) return null
-    const centerX = x + width / 2
-    const centerY = y + height / 2
+  const MIN_HEIGHT = 2
 
-    return (
-      <g transform={`translate(${centerX}, ${centerY})`}>
-        <text
-          transform="rotate(-90)"
-          textAnchor="middle"
-          fill="#ffffff"
-          fontSize={12}
-          fontWeight="bold"
-        >
-          {label}
-        </text>
-      </g>
-    )
-  }
+  const visualData = data.map((entry) => {
+    const total = entry.success + entry.warning + entry.error
+    return {
+      ...entry,
+      success_draw:
+        entry.success > 0
+          ? entry.success
+          : total > 0
+          ? MIN_HEIGHT
+          : 0,
+      warning_draw:
+        entry.warning > 0
+          ? entry.warning
+          : total > 0
+          ? MIN_HEIGHT
+          : 0,
+      error_draw:
+        entry.error > 0
+          ? entry.error
+          : total > 0
+          ? MIN_HEIGHT
+          : 0
+    }
+  })
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length > 0) {
-      const { product_name, count } = payload[0].payload
+      const { product_name, success, warning, error } = payload[0].payload
       return (
         <div className="bg-white text-black shadow-md border rounded px-3 py-2 text-sm">
-          <div><strong>{product_name}</strong></div>
-          <div>{count} db</div>
+          <div>
+            <strong>{product_name}</strong>
+          </div>
+          <div>Success: {success}</div>
+          <div>Warning: {warning}</div>
+          <div>Error: {error}</div>
         </div>
       )
     }
@@ -64,19 +77,28 @@ export const Chart: React.FC<ChartProps> = ({ data, onBarClick }) => {
     <div className="w-full h-[400px] bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 mt-6 border border-gray-200">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
-          data={data}
-          margin={{ top: 20, right: 20, left: 20, bottom: 40 }}
+          data={visualData}
+          margin={{ top: 20, right: 20, left: 20, bottom: 50 }}
+          barCategoryGap={20}
+          onClick={(e: any) => {
+            const productId = e?.activePayload?.[0]?.payload?.product_id
+            if (productId) onBarClick(productId)
+          }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis hide />
+          <XAxis
+            dataKey="product_name"
+            angle={-45}
+            textAnchor="end"
+            interval={0}
+            height={60}
+          />
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
-          <Bar
-            dataKey="count"
-            fill="#009EE2"
-            onClick={(entry) => onBarClick(entry.product_id)}
-            label={<CustomLabel />}
-          />
+
+          <Bar dataKey="success_draw" stackId="stack" fill="#a8e6a1" />
+          <Bar dataKey="warning_draw" stackId="stack" fill="#ffe49c" />
+          <Bar dataKey="error_draw" stackId="stack" fill="#f8a5a5" />
         </BarChart>
       </ResponsiveContainer>
     </div>

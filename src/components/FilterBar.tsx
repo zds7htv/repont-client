@@ -3,7 +3,12 @@ import { api } from "../lib/api"
 import { format } from "date-fns"
 
 interface FilterBarProps {
-  onFilterChange: (filter: { from: string; to: string; machineId: string | null }) => void
+  onFilterChange: (filter: {
+    from: string
+    to: string
+    machineId: string | null
+    eventType: string | null
+  }) => void
 }
 
 interface Machine {
@@ -21,6 +26,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [machineId, setMachineId] = useState<string | null>("all")
+  const [eventType, setEventType] = useState<string | null>("all")
 
   useEffect(() => {
     async function fetchData() {
@@ -38,6 +44,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
           from: formattedFrom,
           to: formattedTo,
           machineId: "all",
+          eventType: null,
         })
       } catch (err) {
         console.error("Hiba a filter adatok lekérdezésénél:", err)
@@ -52,9 +59,10 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         from,
         to,
         machineId: machineId === "all" ? null : machineId,
+        eventType: eventType === "all" ? null : eventType,
       })
     }
-  }, [from, to, machineId])
+  }, [from, to, machineId, eventType])
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full">
@@ -88,6 +96,20 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
           className="border px-3 py-2 mt-2 rounded-full shadow-sm text-sm w-fit min-w-[140px]"
         />
       </div>
+
+      <div className="flex flex-col w-full sm:w-1/4">
+        <select
+          value={eventType ?? "all"}
+          onChange={(e) => setEventType(e.target.value)}
+          className="border px-3 py-2 rounded-full shadow-sm text-sm w-fit min-w-[100px]"
+        >
+          <option value="all">Összes</option>
+          <option value="success">Success</option>
+          <option value="warning">Warning</option>
+          <option value="error">Error</option>
+        </select>
+      </div>
     </div>
   )
 }
+

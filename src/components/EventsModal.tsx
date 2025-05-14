@@ -37,6 +37,22 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
     }
   }, [open])
 
+  const buildParams = (limitValue: number) => {
+    const params: any = {
+      from: filter.from,
+      to: filter.to,
+      machine_id: filter.machineId ?? "all",
+      product_id: productId,
+      limit: limitValue,
+    }
+
+    if (filter.eventType && filter.eventType !== "all") {
+      params.event_type = filter.eventType
+    }
+
+    return params
+  }
+
   // 1. Gyors lekérés 100 sorral
   useEffect(() => {
     if (!open || !productId) return
@@ -46,13 +62,7 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
       const start = performance.now()
       try {
         const res = await api.get<EventData[]>("/events", {
-          params: {
-            from: filter.from,
-            to: filter.to,
-            machine_id: filter.machineId ?? "all",
-            product_id: productId,
-            limit: 100,
-          },
+          params: buildParams(100),
         })
         setFastEvents(res.data)
         setVisibleEvents(res.data.slice(0, limit))
@@ -76,13 +86,7 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
     const fetchAllEvents = async () => {
       try {
         const res = await api.get<EventData[]>("/events", {
-          params: {
-            from: filter.from,
-            to: filter.to,
-            machine_id: filter.machineId ?? "all",
-            product_id: productId,
-            limit: -1,
-          },
+          params: buildParams(-1),
         })
         setAllEvents(res.data)
       } catch (err) {

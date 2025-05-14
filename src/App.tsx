@@ -9,12 +9,16 @@ export interface FilterData {
   from: string
   to: string
   machineId: string | null
+  eventType?: string | null
 }
 
 export interface LeaderboardEntry {
   product_id: number
   product_name: string
-  count: number
+  success: number
+  warning: number
+  error: number
+  clickZone?: number
 }
 
 export interface EventData {
@@ -39,30 +43,46 @@ function App() {
 
   useEffect(() => {
     if (!filter) return
+
+    const params: any = {
+      from: filter.from,
+      to: filter.to,
+      machine_id: filter.machineId ?? "all",
+    }
+
+    if (filter.eventType && filter.eventType !== "all") {
+      params.event_type = filter.eventType
+    }
+
     api
-      .get<LeaderboardEntry[]>("/leaderboard", {
-        params: {
-          from: filter.from,
-          to: filter.to,
-          machine_id: filter.machineId ?? "all",
-        },
+      .get<LeaderboardEntry[]>("/leaderboard", { params })
+      .then((res) => {
+        const withClickZone = res.data.map((item) => ({
+          ...item,
+          clickZone: 1,
+        }))
+        setData(withClickZone)
       })
-      .then((res) => setData(res.data))
       .catch((err) => console.error("Leaderboard lekérés hiba:", err))
   }, [filter])
 
   const handleBarClick = async (productId: number) => {
     if (!filter) return
     setModalProductId(productId)
+
+    const params: any = {
+      from: filter.from,
+      to: filter.to,
+      machine_id: filter.machineId ?? "all",
+      product_id: productId,
+    }
+
+    if (filter.eventType && filter.eventType !== "all") {
+      params.event_type = filter.eventType
+    }
+
     try {
-      const res = await api.get<EventData[]>("/events", {
-        params: {
-          from: filter.from,
-          to: filter.to,
-          machine_id: filter.machineId ?? "all",
-          product_id: productId,
-        },
-      })
+      const res = await api.get<EventData[]>("/events", { params })
       setEvents(res.data)
     } catch (err) {
       console.error("Események lekérése sikertelen:", err)
@@ -110,4 +130,3 @@ function App() {
 }
 
 export default App
-

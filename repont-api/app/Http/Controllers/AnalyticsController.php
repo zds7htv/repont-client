@@ -10,47 +10,71 @@ use PragmaRX\Google2FA\Google2FA;
 
 class AnalyticsController extends Controller
 {
-    // 1. Termék statisztika gép és dátum szerint
+    // 1. Termék statisztika gép és dátum szerint, halmozott oszlopdiagramhoz
     public function leaderboard(Request $request)
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
         $to = $request->query('to', '2025-12-31 23:59:59');
         $machineId = $request->query('machine_id', 'all');
+        $eventType = $request->query('event_type'); // pl.: success, warning, error vagy null (mind)
 
-        $cacheKey = "leaderboard:$from:$to:$machineId";
+        $cacheKey = "leaderboard:$from:$to:$machineId:$eventType";
 
-        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId) {
+        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId, $eventType) {
             $query = DB::table('recycling')
                 ->join('products', 'recycling.product', '=', 'products.id')
-                ->whereBetween('recycling.event_date', [$from, $to])
-                ->where('recycling.event_type', 'success')
-                ->select('products.id as product_id', 'products.product_name', DB::raw('COUNT(*) as count'));
+                ->whereBetween('recycling.event_date', [$from, $to]);
 
             if ($machineId !== 'all') {
-                $query->where('recycling.machine_id', $machineId)
-                      ->join('machines', 'recycling.machine_id', '=', 'machines.id')
-                      ->addSelect('machines.name as machine_name')
-                      ->groupBy('products.id', 'products.product_name', 'machines.name');
-            } else {
-                $query->groupBy('products.id', 'products.product_name');
+                $query->where('recycling.machine_id', $machineId);
             }
 
-            return $query->orderByDesc('count')->get();
+            if ($eventType && in_array($eventType, ['success', 'warning', 'error'])) {
+                $query->where('recycling.event_type', $eventType)
+                      ->select(
+                          'products.id as product_id',
+                          'products.product_name',
+                          DB::raw("COUNT(*) as count")
+                      )
+                      ->groupBy('products.id', 'products.product_name');
+
+                $results = $query->get();
+
+                return $results->map(function ($item) use ($eventType) {
+                    return [
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product_name,
+                        $eventType => (int) $item->count,
+                    ];
+                });
+            } else {
+                $query->select(
+                    'products.id as product_id',
+                    'products.product_name',
+                    DB::raw("SUM(CASE WHEN recycling.event_type = 'success' THEN 1 ELSE 0 END) as success"),
+                    DB::raw("SUM(CASE WHEN recycling.event_type = 'warning' THEN 1 ELSE 0 END) as warning"),
+                    DB::raw("SUM(CASE WHEN recycling.event_type = 'error' THEN 1 ELSE 0 END) as error")
+                )
+                ->groupBy('products.id', 'products.product_name');
+
+                return $query->get();
+            }
         });
     }
 
-    // 2. Modalhoz: adott termék eseményei adott gépen és időszakban (limit dinamikusan kezelt)
+    // 2. Modalhoz: adott termék eseményei adott gépen és időszakban (event_type szűrés is)
     public function events(Request $request)
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
         $to = $request->query('to', '2025-12-31 23:59:59');
         $machineId = $request->query('machine_id');
         $productId = $request->query('product_id');
+        $eventType = $request->query('event_type');
         $limit = (int) $request->query('limit', 100);
 
-        $cacheKey = "events:$from:$to:$machineId:$productId:$limit";
+        $cacheKey = "events:$from:$to:$machineId:$productId:$eventType:$limit";
 
-        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId, $productId, $limit) {
+        return Cache::remember($cacheKey, 600, function () use ($from, $to, $machineId, $productId, $eventType, $limit) {
             $query = DB::table('recycling')
                 ->join('products', 'recycling.product', '=', 'products.id')
                 ->join('machines', 'recycling.machine_id', '=', 'machines.id')
@@ -59,6 +83,10 @@ class AnalyticsController extends Controller
 
             if ($machineId && $machineId !== 'all') {
                 $query->where('recycling.machine_id', $machineId);
+            }
+
+            if ($eventType && in_array($eventType, ['success', 'warning', 'error'])) {
+                $query->where('recycling.event_type', $eventType);
             }
 
             $query->select(
@@ -77,7 +105,6 @@ class AnalyticsController extends Controller
         });
     }
 
-    // 3. Gépek listázása (cache-elve)
     public function machines()
     {
         return Cache::remember('machines:list', 600, function () {
@@ -88,7 +115,6 @@ class AnalyticsController extends Controller
         });
     }
 
-    // 4. Elérhető dátumtartomány (cache-elve)
     public function daterange()
     {
         return Cache::remember('daterange:minmax', 600, function () {
@@ -103,7 +129,6 @@ class AnalyticsController extends Controller
         });
     }
 
-    // 5. Bejelentkezés jelszóval (TOTP előkészítéssel)
     public function login(Request $request)
     {
         $name = $request->input('name');
@@ -133,7 +158,6 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    // 6. TOTP (Google Authenticator) ellenőrzése
     public function verifyTotp(Request $request)
     {
         $name = $request->input('name');
