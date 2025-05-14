@@ -8,11 +8,25 @@ A rendszer két részből áll:
 
 ---
 
+## Újdonságok a legutóbbi frissítésben
+
+- **`event_type` szűrési lehetőség hozzáadva** mind frontend, mind backend oldalon:
+  - A **FilterBar** mostantól tartalmaz egy legördülő menüt az eseménytípus kiválasztására (`success`, `warning`, `error`, `Összes`).
+  - A backend API-k (`/api/leaderboard` és `/api/events`) támogatják az `event_type` query paramétert.
+- **Chart** komponens fejlesztések:
+  - Mostantól **halmozott oszlopdiagram** jelenik meg, külön színekkel (`success`: zöld, `warning`: narancs, `error`: piros).
+  - Az oszlopdiagram **szűrhető eseménytípus szerint**.
+  - **Kevés adat esetén is amikor nem jelenik meg oszlop**, kattintható és modal nyitható.
+- **EventsModal**:
+  - A megnyitott modalban **szintén érvényesül az `event_type` szűrés**, így csak az adott típushoz tartozó eseményeket listázza.
+
+---
+
 ## Funkciók
 
-- Szűrés dátum intervallum és gép szerint  
+- Szűrés dátum intervallum, gép és eseménytípus (`event_type`) szerint  
 - Flakonok rangsorolása (mennyiség szerint)  
-- Oszlopdiagram megjelenítés  
+- Halmozott oszlopdiagram megjelenítés  
 - Események listája (modal ablakban)  
 - **Kétlépcsős bejelentkezés (felhasználónév + Google Authenticator OTP)**  
 
@@ -79,10 +93,10 @@ RDPE4QK6ZYRCZORY
 ## API végpontok
 
 ### GET `/api/leaderboard`  
-Visszaadja az összesített statisztikát dátum és gép szerint.
+Visszaadja az összesített statisztikát dátum, gép és eseménytípus (`event_type`) szerint.
 
 ### GET `/api/events`  
-Termékhez tartozó események listázása.
+Termékhez tartozó események listázása gép, dátum és eseménytípus (`event_type`) szerint.
 
 ### GET `/api/machines`  
 Visszaadja az elérhető gépeket.
@@ -111,7 +125,7 @@ Google Auth OTP kód ellenőrzése.
 
 1. Jelentkezz be a kezdőlapon.  
 2. Add meg a Google Authenticator által generált kódot.  
-3. Válassz dátumot és gépet.  
+3. Válassz dátumot, gépet és eseménytípust.  
 4. Az oszlopdiagramon kattints egy flakonra az események listázásához.
 
 ---
