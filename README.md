@@ -10,24 +10,25 @@ A rendszer két részből áll:
 
 ## Újdonságok a legutóbbi frissítésben
 
-- **`event_type` szűrési lehetőség hozzáadva** mind frontend, mind backend oldalon:
-  - A **FilterBar** mostantól tartalmaz egy legördülő menüt az eseménytípus kiválasztására (`success`, `warning`, `error`, `Összes`).
-  - A backend API-k (`/api/leaderboard` és `/api/events`) támogatják az `event_type` query paramétert.
-- **Chart** komponens fejlesztések:
-  - Mostantól **halmozott oszlopdiagram** jelenik meg, külön színekkel (`success`: zöld, `warning`: narancs, `error`: piros).
-  - Az oszlopdiagram **szűrhető eseménytípus szerint**.
-  - **Kevés adat esetén is amikor nem jelenik meg oszlop**, kattintható és modal nyitható.
-- **EventsModal**:
-  - A megnyitott modalban **szintén érvényesül az `event_type` szűrés**, így csak az adott típushoz tartozó eseményeket listázza.
+- **`event_type` szűrési lehetőség hozzáadva** frontend és backend oldalon is.
+- **Halmozott oszlopdiagram** és részletes eseménylista fejlesztve.
+- **EventsModal módosítás**: már háttérkattintással is zárható.
+- **Új log feltöltő funkció frontendről** (UploadLog.tsx):
+  - Csak `.log` kiterjesztés engedélyezett.
+  - A fájl tartalma JSON-ként validálásra kerül frontend oldalon.
+  - Érvényes fájl backendre kerül mentésre, és az összes cache automatikusan törlődik.
+- **Watcher (watcher.py)** már háttérszolgáltatásként (service) fut és **valós időben** dolgozza fel a temp mappába érkező logokat.
+- **.gitignore frissítve**, hogy ne kerüljenek felesleges fájlok verziókezelésbe.
 
 ---
 
 ## Funkciók
 
-- Szűrés dátum intervallum, gép és eseménytípus (`event_type`) szerint  
+- Szűrés dátum, gép és eseménytípus (`event_type`) szerint  
 - Flakonok rangsorolása (mennyiség szerint)  
 - Halmozott oszlopdiagram megjelenítés  
-- Események listája (modal ablakban)  
+- Események listája (modal ablakban, dinamikusan tölthető)  
+- Frontendről történő logfájl-feltöltés validációval és visszajelzéssel  
 - **Kétlépcsős bejelentkezés (felhasználónév + Google Authenticator OTP)**  
 
 ---
@@ -86,8 +87,6 @@ A rendszer **kétlépcsős azonosítást** használ:
 RDPE4QK6ZYRCZORY
 ```
 
-> Regisztráld be Google Authenticator alkalmazásba manuálisan, vagy generálj hozzá QR kódot.
-
 ---
 
 ## API végpontok
@@ -119,6 +118,10 @@ Google Auth OTP kód ellenőrzése.
 { "name": "admin", "code": "123456" }
 ```
 
+### POST `/api/upload-log`  
+Új logfájl feltöltése frontendről (csak `.log`, JSON tartalom).  
+Feltöltés után a fájl a `repont-logupload/update/temp` mappába kerül, majd cache ürítés történik.
+
 ---
 
 ## Használat
@@ -127,6 +130,7 @@ Google Auth OTP kód ellenőrzése.
 2. Add meg a Google Authenticator által generált kódot.  
 3. Válassz dátumot, gépet és eseménytípust.  
 4. Az oszlopdiagramon kattints egy flakonra az események listázásához.
+5. A feltöltő gomb segítségével új logokat tölthetsz fel valós idejű megjelenítéssel.
 
 ---
 
@@ -139,15 +143,18 @@ repont-client/
 │   ├── lib/
 │   ├── App.tsx
 │   ├── Login.tsx
+│   ├── UploadLog.tsx
 │   └── ...
 ├── repont-api/
 │   ├── app/
 │   ├── routes/
 │   ├── database/
 │   └── ...
+├── repont-logupload/
+│   ├── watcher.py
+│   ├── update/
+│   └── ...
 ├── public/
-├── tailwind.config.js
-├── postcss.config.cjs
 └── README.md
 ```
 
@@ -226,28 +233,12 @@ A watcher csak akkor dolgozza fel a fájlokat, ha azok helyes JSON formátumban 
     "event_date": "2025-05-14 21:26:00",
     "created_at": "2025-05-14 21:26:05",
     "updated_at": "2025-05-14 21:26:05"
-  },
-  {
-    "machine_id": 2,
-    "product": 11,
-    "event_type": "warning",
-    "event_date": "2025-05-14 21:27:15",
-    "created_at": "2025-05-14 21:27:20",
-    "updated_at": "2025-05-14 21:27:20"
   }
 ]
 ```
 
 - **Kulcsok pontosan:** `machine_id`, `product`, `event_type`, `event_date`, `created_at`, `updated_at`  
 - A fájl a `recycling` mappába kerül, és az adatok a `recycling` táblába íródnak.
-
----
-
-### Fontos ellenőrzési szabályok
-
-- A JSON fájl **gyökerében tömb** (`[]`) kell legyen.  
-- Minden rekordban **minden kulcs szerepeljen**, pontos névvel és típussal.  
-- Extra kulcs vagy hiányzó kulcs esetén a fájl **nem kerül feldolgozásra**.
 
 ---
 
