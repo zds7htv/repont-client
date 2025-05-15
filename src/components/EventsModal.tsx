@@ -53,7 +53,6 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
     return params
   }
 
-  // 1. Gyors lekérés 100 sorral
   useEffect(() => {
     if (!open || !productId) return
 
@@ -79,7 +78,6 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
     fetchFastEvents()
   }, [open, productId, filter])
 
-  // 2. Teljes adat háttérben
   useEffect(() => {
     if (!open || !productId) return
 
@@ -97,7 +95,6 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
     fetchAllEvents()
   }, [open, productId, filter])
 
-  // 3. Limit változásra jelenítsük meg a megfelelő adatokat
   useEffect(() => {
     const source = allEvents.length > 0 ? allEvents : fastEvents
     if (limit === -1) {
@@ -110,8 +107,14 @@ export const EventsModal: React.FC<EventsModalProps> = ({ open, onClose, filter,
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-md w-fit max-w-full shadow-lg relative pr-16">
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 p-6 rounded-md w-fit max-w-full shadow-lg relative pr-16"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           className="absolute top-3 right-3 text-sm px-2 py-1 bg-red-600 text-white rounded"
           onClick={onClose}

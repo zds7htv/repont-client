@@ -3,6 +3,7 @@ import { api } from "./lib/api"
 import { FilterBar } from "./components/FilterBar"
 import { Chart } from "./components/Chart"
 import { EventsModal } from "./components/EventsModal"
+import { UploadLog } from "./components/UploadLog"
 import Login from "./Login"
 
 export interface FilterData {
@@ -35,6 +36,7 @@ function App() {
   const [events, setEvents] = useState<EventData[]>([])
   const [modalProductId, setModalProductId] = useState<number | null>(null)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
 
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem("loggedIn") === "true"
@@ -98,32 +100,46 @@ function App() {
           <h1 className="text-4xl font-extrabold border-b-4 border-[#00b0d7] inline-block">
             Repont statisztika
           </h1>
-          <button
-            className="bg-red-500 text-white px-3 py-1 rounded"
-            onClick={() => {
-              sessionStorage.removeItem("loggedIn")
-              setLoggedIn(false)
-            }}
-          >
-            Kilépés
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="bg-blue-500 text-white px-3 py-1 rounded"
+              onClick={() => setShowUpload((prev) => !prev)}
+            >
+              {showUpload ? "Statisztika" : "Feltöltés"}
+            </button>
+            <button
+              className="bg-red-500 text-white px-3 py-1 rounded"
+              onClick={() => {
+                sessionStorage.removeItem("loggedIn")
+                setLoggedIn(false)
+              }}
+            >
+              Kilépés
+            </button>
+          </div>
         </div>
 
-        <FilterBar onFilterChange={setFilter} />
-
-        {data.length > 0 ? (
-          <Chart data={data} onBarClick={handleBarClick} />
+        {showUpload ? (
+          <UploadLog />
         ) : (
-          <p className="mt-10 text-center text-lg font-semibold">Nincs megjeleníthető adat.</p>
-        )}
+          <>
+            <FilterBar onFilterChange={setFilter} />
 
-        <EventsModal
-          open={modalProductId !== null}
-          onClose={() => setModalProductId(null)}
-          productId={modalProductId}
-          filter={filter!}
-          events={events}
-        />
+            {data.length > 0 ? (
+              <Chart data={data} onBarClick={handleBarClick} />
+            ) : (
+              <p className="mt-10 text-center text-lg font-semibold">Nincs megjeleníthető adat.</p>
+            )}
+
+            <EventsModal
+              open={modalProductId !== null}
+              onClose={() => setModalProductId(null)}
+              productId={modalProductId}
+              filter={filter!}
+              events={events}
+            />
+          </>
+        )}
       </div>
     </div>
   )
