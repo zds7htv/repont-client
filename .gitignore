@@ -30,3 +30,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Laravel logok és cache
+repont-api/storage/logs/
+repont-api/storage/framework/cache/
+repont-api/storage/framework/sessions/
+repont-api/storage/framework/views/
+repont-api/bootstrap/cache/*.php
+
+# Laravel környezeti fájlok
+repont-api/.env
+repont-api/.env.*
+
+# Composer lock ha nem szükséges
+repont-api/composer.lock
+
+# Vendor könyvtár (függőségek)
+repont-api/vendor/
+
+# Tesztfájlok ha nem verziózott
+repont-api/tests/
+
+# Ideiglenes benchmark és egyedi futtatás
+repont-api/benchmark_logs/
+repont-api/benchmark_api.sh

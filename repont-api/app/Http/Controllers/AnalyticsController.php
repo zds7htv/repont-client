@@ -10,13 +10,12 @@ use PragmaRX\Google2FA\Google2FA;
 
 class AnalyticsController extends Controller
 {
-    // 1. Termék statisztika gép és dátum szerint, halmozott oszlopdiagramhoz
     public function leaderboard(Request $request)
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
         $to = $request->query('to', '2025-12-31 23:59:59');
         $machineId = $request->query('machine_id', 'all');
-        $eventType = $request->query('event_type'); // pl.: success, warning, error vagy null (mind)
+        $eventType = $request->query('event_type');
 
         $cacheKey = "leaderboard:$from:$to:$machineId:$eventType";
 
@@ -31,12 +30,12 @@ class AnalyticsController extends Controller
 
             if ($eventType && in_array($eventType, ['success', 'warning', 'error'])) {
                 $query->where('recycling.event_type', $eventType)
-                      ->select(
-                          'products.id as product_id',
-                          'products.product_name',
-                          DB::raw("COUNT(*) as count")
-                      )
-                      ->groupBy('products.id', 'products.product_name');
+                    ->select(
+                        'products.id as product_id',
+                        'products.product_name',
+                        DB::raw("COUNT(*) as count")
+                    )
+                    ->groupBy('products.id', 'products.product_name');
 
                 $results = $query->get();
 
@@ -62,7 +61,6 @@ class AnalyticsController extends Controller
         });
     }
 
-    // 2. Modalhoz: adott termék eseményei adott gépen és időszakban (event_type szűrés is)
     public function events(Request $request)
     {
         $from = $request->query('from', '2025-01-01 00:00:00');
@@ -184,5 +182,64 @@ class AnalyticsController extends Controller
             'status' => 'ok',
             'message' => 'TOTP ellenőrzés sikeres.'
         ]);
+    }
+
+    public function uploadLog(Request $request)
+    {
+        if (!$request->hasFile('file')) {
+            return response()->json(['error' => 'Nincs fájl csatolva.'], 400);
+        }
+
+        $file = $request->file('file');
+
+        if (!$file->isValid()) {
+            return response()->json(['error' => 'Sikertelen fájl feltöltés.'], 400);
+        }
+
+        if ($file->getClientOriginalExtension() !== 'log') {
+            return response()->json(['error' => 'Csak .log kiterjesztésű fájl engedélyezett.'], 400);
+        }
+
+        $content = file_get_contents($file->getRealPath());
+        $json = json_decode($content, true);
+
+        if (!is_array($json)) {
+            return response()->json(['error' => 'A fájl nem JSON tömb.'], 400);
+        }
+
+        $first = $json[0] ?? null;
+        if (!$first || !is_array($first)) {
+            return response()->json(['error' => 'A JSON első elem nem objektum.'], 400);
+        }
+
+        $keys = array_keys($first);
+        sort($keys);
+
+        $isProducts = $keys === ['product_name', 'type_number'];
+        $isRecycling = $keys === ['created_at', 'event_date', 'event_type', 'machine_id', 'product', 'updated_at'];
+
+        foreach ($json as $row) {
+            if (!is_array($row)) {
+                return response()->json(['error' => 'Minden rekord objektum kell legyen.'], 400);
+            }
+            $rowKeys = array_keys($row);
+            sort($rowKeys);
+
+            if (
+                ($isProducts && $rowKeys !== ['product_name', 'type_number']) ||
+                ($isRecycling && $rowKeys !== ['created_at', 'event_date', 'event_type', 'machine_id', 'product', 'updated_at'])
+            ) {
+                return response()->json(['error' => 'Nem minden rekord felel meg a kívánt struktúrának.'], 400);
+            }
+        }
+
+        // Minden valid, mentés temp mappába
+        $destPath = realpath(base_path('../repont-client/repont-logupload/update/temp')) . '/' . uniqid() . '.log';
+        file_put_contents($destPath, $content);
+
+        // Cache törlés a leggyakoribb kulcsok alapján
+        Cache::flush();
+
+        return response()->json(['success' => true, 'message' => "Fájl mentve a temp mappába ellenőrzésre."]);
     }
 }
